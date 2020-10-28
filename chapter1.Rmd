@@ -9,5 +9,11 @@
 date()
 
 ```
-The text continues here.
+## About Me
+My name is Alvin Khng and I am current doing my PhD studies in radiochemistry and radiobiology. I am excited for this course as I believed in the power of data statistics. I also feel that this would accelerate the process of data analysis and management i.e. more productivity. I have learnt basic python and used R in courses but most of the time is just follow a template within minimum changes. Therefore, I hope to learn more from this course. Lastly, I chance upon this course through the usual PhD emails regarding modules etc. 
 
+## My GitHub Repository
+https://github.com/Alvinash/IODS-project
+
+
+```
