@@ -1,13 +1,63 @@
-# Insert chapter 2 title here
 
-*Describe the work you have done this week and summarize your learning.*
+# Regression and model validation
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+I have finshed the datacamp on regression and model validation. 
 
-```{r}
-date()
+```{r echo=FALSE}
+learning2014 <- read.csv("learning2014.csv",row.names=1)
 ```
 
-Here we go again...
+## Structure of data
+```{r echo=FALSE}
+str(learning2014)
+```
+The data contains several variables such as personnel's gender, age, (global) attitude (towards statistics) their (exam) points, as well as their answers to DEEP, STRAtegic and SURFace question, which follows a Likert scale (1-5).
+
+## ggpair plot of the variables
+```{r echo=FALSE}
+library(ggplot2)
+library(GGally)
+
+p <- ggpairs(learning2014, mapping = aes(alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+
+p
+```
+
+A pair relationship between two variables of all possible combinations. The nature of their plots are dependent on the two variables e.g. scatteplot, box and whiskers, barplot etc.. Their correlation is shown as well.
+
+## Summary of data
+```{r echo=FALSE}
+summary(learning2014)
+```
+A summary of data showing the type of variables, mean, minimum, maximum and 25%, 50% and 75% quartile values.
+
+Based on the summary of the data, three explanatory variables "attitude", "surf" and "stra" are picked to fit a regression model against exam points as they have the highest absolute correlation value.
+
+## Linear model fit
+```{r echo = FALSE}
+my_model2 <- lm(points ~ attitude + stra + surf, data = learning2014)
+
+summary(my_model2)
+```
+The summary shows the statistical test of the fitted model. It can be seen that only "attitude" has a statistical significant relationship with the "point"s variable, concluding that there is a statistical relationship between "attitude" and "exam points". Therefore, the model is fitted again with just the "attitude" variable. 
+
+## Better linear model fit
+```{r echo = FALSE}
+my_model3 <- lm(points ~ attitude, data = learning2014)
+
+summary(my_model3)
+```
+The new linear fit summary shows that the P value has improved by a factor of 10.   the  there is a positive relationship between "attitude" and "points" where every 1 unit increase in "attitude" results in a 3.5255 unit increase in "exam points". However, the linear fit has a low multiple R-squared value of 0.1906, which indicates that only some of the variability of the data is around its mean. 
+
+## Model validation
+```{r echo=FALSE}
+plot(my_model3,which=c(1,2,5))
+```
+
+The linear regression model assumes that:
+- The data follows a linear relationship
+- The errors are normally distributed
+- The errors are not correlated
+- The errors have constant variance
+
+The normal QQ plot confirms that the data between "attitude" and "exam points" are normally distributed since the most of the data fits in on the normal line. The residual vs fitted plot shows that the data plots are similarly spread as fitted values increases, implying that the errors have constant variance. 
