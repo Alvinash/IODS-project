@@ -16,7 +16,10 @@ output:
     toc: yes
     toc_depth: '2'
 ---
-
+<style>
+body {
+text-align: justify}
+</style>
 ***
 
 # Introduction to Open Data Science - Course Project
@@ -32,6 +35,7 @@ output:
 ```
 
 ***
-
+```{r child="chapter3.rmd"}
+```
 (more chapters to be added similarly as we proceed with the course!)
 

@@ -1,0 +1,85 @@
+# Logistic regression
+
+## Data retrieval
+
+```{r echo=FALSE,message=FALSE }
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+```
+```{r echo=FALSE}
+alc <- read.csv("/RStudio/IODS-project/data/alc.csv",row.names=1)
+colnames(alc)
+```
+The data represents student's achievement in secondary education of two Portuguese schools. The data attributes student's grades, demographic, social and school related feastures, and are collected using school reports and questionnaires. Average of two grades, Portuguese and Mathematics, are obtained from their 1st, 2nd and 3rd period (G1, G2 and G3 respectively). Since G3 has strong has a strong correlation with G1 and G2, only G3 is used for analysis. alc_use represents the average alcohol consumption per week while we assumed that high useage of alcohol (high_use) is more than 2. More deatils can be found in https://archive.ics.uci.edu/ml/datasets/Student+Performance. 
+
+## Exploring 4 variables with possible relationship with alcohol consumption
+
+To study the effect of alcohol usage, four variables are choosen. They are: health, grades, quality of family relationship and frequency of going out. The hypothesis are as follows:
+
+- H1 = High usage of alcohol may deteroriate health status
+- H2 = High usage of alcohol may affect grades badly 
+- H3 = High usage of alcohol may dampen the relationship with family due to possible alcoholism leading to disputes and violence
+- H4 = High usage of alcohol may affect the occurence of going out a lot to drink with friends
+
+## Numerical and Graphical results
+
+```{r echo=FALSE}
+vars <- c("health","G3","famrel","goout")
+names<- c("Health","Grades","Family relationship","Going out")
+
+alc%>%group_by(sex,high_use)%>%summarise(count=n(),mean_health=mean(health),mean_grade=mean(G3),mean_family_relationship=mean(famrel),mean_going_out=mean(goout))
+for (var1 in vars){
+  p1 <- ggplot(alc,aes_string(x = "high_use",y = var1, col = "sex"))
+  print(p1 + geom_boxplot() +xlab("High alcohol consumption")+ ylab(names[1]))
+  names <- names[-1]
+}
+```
+
+The table shows the average grades and scores for health, grade and family relationship. They are splited into four categories depending on geneder and whether there is high usage of alcohol. The box plot shows the spread of the 4 variables compared to alcohol consumption. 
+
+It seems that for H1, the usage of alcohol does not really affect the quality of life. They share similar mean score and most of them have median at 4. It seems that females not having high usage of alcohol may have poorer health due to lower median, but a majority of them stays in the higher score region. Therefore, H1 is unlikely to happen.
+
+For H2, both females have very similar mean grades, while males who do not drink as much have higher mean grades than their counterpart. This observation is also evident from the box plot, but requires more in-depth analysis to prove this hypothesi since the females are not affected.
+
+Regardless of gender, H3 may be likely as the mean scores of family relationship for high consumption of alcohol are lower. While they all share very similar median, The box plot also shows that a majority of high usage drinkers are below the median, while for low usage drinkers the scores are above the median.
+
+Lastly, high usage drinkers are more likely to go out than low usage for both genders. THis observation is more prominent for males.
+
+```{r echo=FALSE}
+m <- glm(high_use ~ health + G3 + famrel + goout, data = alc, family = "binomial")
+summary(m)
+```
+
+```{r echo=FALSE}
+OR <- coef(m) %>% exp
+CI <- exp(confint(m))
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+```
+talk about the results here... Statisically famrel and goout has the lowest p value
+
+```{r echo=FALSE}
+probabilities <- predict(m, type = "response")
+alc <- mutate(alc, probability = probabilities)
+alc <- mutate(alc, prediction = probabilities >0.5)
+select(alc, famrel, goout, high_use, probability, prediction) %>% tail(10)
+table(high_use = alc$high_use, prediction = alc$prediction)
+g <- ggplot(alc, aes(x = probability, y = high_use,col=prediction))
+g + geom_point()
+table(high_use = alc$high_use, prediction = alc$prediction)%>% prop.table %>% addmargins
+```
+
+```{r echo=FALSE}
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+loss_func(alc$high_use,alc$probability)
+
+library(boot)
+
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 2)
+cv$delta[1]
+```
