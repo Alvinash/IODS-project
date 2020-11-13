@@ -19,8 +19,8 @@ To study the effect of alcohol usage, four variables are choosen. They are: heal
 
 - H1 = High usage of alcohol may deteroriate health status
 - H2 = High usage of alcohol may affect grades badly 
-- H3 = High usage of alcohol may dampen the relationship with family due to possible alcoholism leading to disputes and violence
-- H4 = High usage of alcohol may affect the occurence of going out a lot to drink with friends
+- H3 = High usage of alcohol may dampen the relationship with family due to possible alcoholism leading to disputes and violence. Conversely, a poor relationship with family may lead to higher alcohol consumption. 
+- H4 = High usage of alcohol may be due to the occurence of going out a lot to drink with friends
 
 ## Numerical and Graphical results
 
@@ -50,15 +50,14 @@ Lastly, high usage drinkers are more likely to go out than low usage for both ge
 m <- glm(high_use ~ health + G3 + famrel + goout, data = alc, family = "binomial")
 summary(m)
 ```
-
+From the P value, going out has the lowest P value, followed by family relationship. This means that they are be significant enough to be correlated to alcohol consumption.
 ```{r echo=FALSE}
 OR <- coef(m) %>% exp
 CI <- exp(confint(m))
 # print out the odds ratios with their confidence intervals
 cbind(OR, CI)
 ```
-talk about the results here... Statisically famrel and goout has the lowest p value
-
+Since only famrel and goout are significant, we will only be looking at these two variables. To obtain the true coefficient, we have to get the difference the intercept and variable. Hence, the true coeff for famrel is 0.58287  and go out is 1.9378 .The odds ratio for goout is >1, which suggests that the more you go out, the more likely you are to have high alcohol consumption. This supports H4. For famrel, since it is below 1, the better family relationship you have, the less likely you are to have high alcohol usage. THis supporst the 2nd part of H3.  
 ```{r echo=FALSE}
 probabilities <- predict(m, type = "response")
 alc <- mutate(alc, probability = probabilities)

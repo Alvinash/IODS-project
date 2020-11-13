@@ -467,7 +467,7 @@ text-align: justify}
 <div id="about-the-project" class="section level1">
 <h1>About the project</h1>
 <p><em>Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.</em></p>
-<pre><code>## [1] &quot;Fri Nov 13 00:50:03 2020&quot;</code></pre>
+<pre><code>## [1] &quot;Fri Nov 13 12:54:54 2020&quot;</code></pre>
 <div id="about-me" class="section level2">
 <h2>About Me</h2>
 <p>My name is Alvin Khng and I am current doing my PhD studies in radiochemistry and radiobiology. I am excited for this course as I believed in the power of data statistics. I also feel that this would accelerate the process of data analysis and management i.e. more productivity. I have learnt basic python and used R in courses but most of the time is just follow a template within minimum changes. Therefore, I hope to learn more from this course. Lastly, I chance upon this course through the usual PhD emails regarding modules etc.</p>
@@ -593,8 +593,8 @@ text-align: justify}
 <ul>
 <li>H1 = High usage of alcohol may deteroriate health status</li>
 <li>H2 = High usage of alcohol may affect grades badly</li>
-<li>H3 = High usage of alcohol may dampen the relationship with family due to possible alcoholism leading to disputes and violence</li>
-<li>H4 = High usage of alcohol may affect the occurence of going out a lot to drink with friends</li>
+<li>H3 = High usage of alcohol may dampen the relationship with family due to possible alcoholism leading to disputes and violence. Conversely, a poor relationship with family may lead to higher alcohol consumption.</li>
+<li>H4 = High usage of alcohol may be due to the occurence of going out a lot to drink with friends</li>
 </ul>
 </div>
 <div id="numerical-and-graphical-results" class="section level2">
@@ -640,6 +640,7 @@ text-align: justify}
 ## AIC: 413.43
 ## 
 ## Number of Fisher Scoring iterations: 4</code></pre>
+<p>From the P value, going out has the lowest P value, followed by family relationship. This means that they are be significant enough to be correlated to alcohol consumption.</p>
 <pre><code>## Waiting for profiling to be done...</code></pre>
 <pre><code>##                    OR      2.5 %    97.5 %
 ## (Intercept) 0.1405097 0.02622717 0.7098938
@@ -647,7 +648,7 @@ text-align: justify}
 ## G3          0.9573426 0.88846075 1.0316143
 ## famrel      0.6779358 0.51695340 0.8846371
 ## goout       2.1931134 1.74534860 2.7937223</code></pre>
-<p>talk about the results here… Statisically famrel and goout has the lowest p value</p>
+<p>Since only famrel and goout are significant, we will only be looking at these two variables. To obtain the true coefficient, we have to get the difference the intercept and variable. Hence, the true coeff for famrel is 0.58287 and go out is 1.9378 .The odds ratio for goout is &gt;1, which suggests that the more you go out, the more likely you are to have high alcohol consumption. This supports H4. For famrel, since it is below 1, the better family relationship you have, the less likely you are to have high alcohol usage. THis supporst the 2nd part of H3.</p>
 <pre><code>##     famrel goout high_use probability prediction
 ## 373      4     2    FALSE  0.23047493      FALSE
 ## 374      5     3     TRUE  0.23279324      FALSE
@@ -670,7 +671,7 @@ text-align: justify}
 ##    TRUE  0.19633508 0.10209424 0.29842932
 ##    Sum   0.83507853 0.16492147 1.00000000</code></pre>
 <pre><code>## [1] 0.2591623</code></pre>
-<pre><code>## [1] 0.2591623</code></pre>
+<pre><code>## [1] 0.2617801</code></pre>
 <p>(more chapters to be added similarly as we proceed with the course!)</p>
 </div>
 </div>
