@@ -1,0 +1,114 @@
+# Clustering and classification
+
+## Loading Boston data
+```{r echo=FALSE}
+library(MASS)
+library(dplyr)
+data("Boston")
+str(Boston)
+dim(Boston)
+```
+
+The "Boston" data frame has 506 observations out of 14 variables. It describes the housing values (Median value) in suburbs of Boston based on factors such as crime rates, accessibility to infrastructures or social status of the population.More details can be found in https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html.
+
+## Graphical overiew and summary
+```{r echo=FALSE}
+pairs(Boston)
+summary(Boston)
+```
+
+The graphical overiew and summary of "Boston" is as shown above. The pair plots is rather small and messy, but a rough idea of the relationship between each factors can be seen in the scatter plots. They summary provides a good representative of the data range and distributions. For example, the ages are catered more towards the older generations, while per capita crime rate is significantly low (3.67 at 75 percentile). 
+
+## Standardisation and dividing dataset for both training and testing
+```{r echo=FALSE}
+scaled_boston<-scale(Boston)
+summary(scaled_boston)
+```
+
+From the summary of the data after scaling, we can observe that the all their mean has been change to zero. This is because the formula of scale takes the difference between each data point and mean. THe values are smaller as they are divded by their standard deviation i.e 1 = 1 standard deviation away from the mean. The values now provide insights on the distribution of the data.
+
+```{r echo=FALSE}
+boston_scaled<-as.data.frame(scaled_boston)
+bins<-quantile(boston_scaled$crim)
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE,label=(c("low","med_low", "med_high", "high")))
+table(crime)
+boston_scaled <- dplyr::select(boston_scaled, -crim)%>%data.frame(crime)
+```
+
+We can observe that there is equal spread of crime in all the 4 quartiles.
+
+```{r echo=FALSE}
+ind<-sample(nrow(boston_scaled), size = nrow(boston_scaled)*0.8)
+train <- boston_scaled[ind,]
+test <- boston_scaled[-ind,]
+```
+
+## Fitting with linear discriminant analysis
+### Drawing the biplot
+```{r echo=FALSE}
+lda.fit <- lda(crime ~ ., data=train)
+print(lda.fit)
+
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, dimen = 2,col = classes,pch = classes)
+lda.arrows(lda.fit, myscale = 1)
+
+```
+
+LDA provides the coefficient of a linear combination of variables. From the plot, we can observe that accessibility to radial highways (rad) has the highest LD1 coefficient, which suggests that it tends towards the med_high, high region. The coefficents of LD2 are all below 1.
+
+### Predicting the test data
+```{r echo=FALSE}
+correct_classes <- test$crime
+test <- dplyr::select(test,-crime)
+lda.pred <- predict(lda.fit, newdata = test)
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+
+The table shows the predicted results based on the number of correct entries. The correctness of the testing power can be vaguely determined by the highest number of entries in the correct percentile. i.e highest number should be in low for the low row and etc.
+
+## K-means algorithm
+### Calculating Euclidean distance
+```{r echo=FALSE}
+data("Boston")
+scaled_boston2 <- scale(Boston)%>%as.data.frame()
+dist_boston<-dist(scaled_boston2)
+summary(dist_boston)
+```
+
+The median distance is 4.8241. The 1st to 3rd quartile is rather closed to the median,but the values gets widen as they reach the min and max. 
+
+### Running K-means clustering
+```{r echo=FALSE}
+set.seed(123)
+k_max <-10
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(Boston, k)$tot.withinss})
+
+# visualize the results
+ggplot2::qplot(x = 1:k_max, y = twcss, geom = 'line')
+```
+
+From the graph, 2 clusters seem to be optimal since it has the most radical change compared to the rest. 
+
+```{r echo=FALSE}
+km<- kmeans(Boston, centers=2)
+pairs(Boston,col=km$cluster)
+```
+
+We can see 2 distinct clusters for rad pairings, which further enhances the fact that it has very high LD1 coefficient.  
+
+
