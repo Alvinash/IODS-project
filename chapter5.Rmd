@@ -1,0 +1,90 @@
+# Dimensionality reduction techniques
+
+```{r}
+library(FactoMineR)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+```{r}
+human3<-read.csv("human3.csv",row.names=1)
+str(human3)
+summary(human3)
+GGally::ggpairs(human3)
+cor(human3)%>%corrplot::corrplot()
+```
+
+## PCA without standardising
+```{r}
+pca_human<-prcomp(human3)
+s<-summary(pca_human)
+s
+pca_pr <- round(100*s$importance[2, ], digits = 1)
+pca_pr
+biplot(pca_human, choices = 1:2,cex=c(0.8,1),col=c("grey40", "deeppink2"))
+```
+
+
+## PCA with standardising
+```{r}
+pca_human_std<-scale(human3)%>%prcomp()
+s_std<-summary(pca_human_std)
+s_std
+pca_pr_std <- round(100*s_std$importance[2, ], digits = 1)
+pca_pr_std
+biplot(pca_human_std, choices = 1:2,cex=c(0.4,0.7),col=c("grey40", "deeppink2"))
+```
+
+The plot describes the PC components when the data is reduced using the PCA method.PCA essentially transforms the dataset by projecting them onto a set of orthogonal axes. It finds the best linear combination of the original variables so that the variance or spread along the new variable is maximum. The standard deviation of Principal components represent the eigenvalues. For the sake of learning, we will only be looking at PC1 and PC2 since they hold the highest percentage. 
+
+The variables are as follows:
+- Expected.Edu is the espected education in years
+- GNI refers to Gross National Income per capita 
+- GNI.HDI.RANK refers to the substraction of HDI rank from GNI rank (i.e GNI minus HDI)
+- Mat.Mor Ratio refers to the number of deaths per 100 000 live births.
+- Birth.Rate refers to the adolescent births per 1000 women ages 15 - 19.
+- Parliment percentage refers to the percentage of parliment seats taken up by females
+- F2Edu & M2Edu refers to secondardy education of both female and male respectively. 
+- FLab & MLab refers the labour force of both female and male respectively.
+- EduRatio and LabRatio refers to the ratio of female over male for both education and labour respectively. 
+
+In the non standardised biplot, the standard dev of PC1 is way higher as compared to the other components.As such, the percentage attributed to PC1 is way higher than the rest. This means that only the first maximum amount of variance if captured but any subsequent is not. This would misrepresent the data, as the angles between each variance arrows and the angle between variable and the axis are important in determining their correlation. As such, standardisation helps to scale each components such that they are independent of each other's magnitude.
+
+From the standardised biplot, we can now see that the std dev is much closer to each other. As such, we are able to see that the proportion of each PC is more significant than before. From the biplot, we can observe the correlation between each variable (arrow) and against the axis.A few observations can be made: 
+1)Mat Mor Rat and Birth Rate have very high correlation, which is obvious since the numberr of deaths is based on 100 000birth, which is affected by the birth rate
+2) Expected education, GNI, Life expectancy and edu ratio are highly correlated. This is also obvious because gross national income do affect the quality of life and affordable education.
+3) Lab ratio and parilment percentage are correlated but not as high as the above 2 points. Since parliment is also a form of labour/job, then the ratio can be expected to be similar. 
+4) Other than lab ratio and parliment percentage, the 6 other variables are highly correlated to PC1. This means that these few variables are accounted for the maximum spread of the data i.e. mat.mor.ratio and birth rate in a positive manner, the other 4 in a negative manner.
+5) The last two variable contributes positively to PC2.
+
+Note: I read up on PCA and found that often, screen plot is done to choose the important PC components. When the sum of PC percentage exceeds 95%, the remaninding PC values can be ignored. 
+
+## Its Tea time! 
+```{r}
+data("tea")
+str(tea)
+dim(tea)
+keep_them<-c("Tea", "How", "how", "sugar", "where", "lunch")
+tea_time <- dplyr::select(tea,one_of(keep_them))
+summary(tea_time)
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar()+theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+The tea data set contains 300 obseravation out of 36 variables. It describes the consumption behaviour of 300 individuals on tea, such as when they drink, what they drink and how they drink it. Other information includes the some personal details. For the analysis, we will only be looking at How they drink their tea with (lemon, milk, other or alone), how they like their tea leaves, whether they put in sugar, where they drink it  and whether during lunch times. 
+
+The simple bar plot shows the number of individuals according to the x axis. Interesting, a majority of them does not consume tea during lunch. They also have strong preference for Earl Grey, likes tea bag, likes to drink it alone and purchase the teas from cahin stores. Also, they are impartial on whether sugar is present or not. 
+
+```{r}
+mca <- MCA(tea_time, graph = FALSE)
+summary(mca)
+plot(mca,invisible=c("ind"),habillage = "quali")
+```
+
+The mca shows the variance of each dimension. The highest % is only 15% which suggest that it will only explain 15% of the variance. Multiple dimensions would be needed to tell us the full story. Looking at the categorical variables, under dim 1, both "how" and "where" have the largest value, which suggest that they are highly correlated. For Dim 2, we have "how" and "where". 
+
+From the biplot, we can obtain both the correlation between each individual cataegory from their angles between each other, as well as the association via the distance from the origin. Based on the MCA factor map, it seems that most earl grey drinkers prefer to have milk (since their angle is very small). There is slight preference for earl grey drinks to have sugar in it. Black tea and green tea drinkers seems to like to have their tea without sugar. Those who bought their tea from the tea shop often have unpackaged tea, which makes sense since shops normally sells unpackaged ones. As for chain store, they usually sell tea bags that can be readily prepared for convenience. However, all these insights should be taken with a pinch of salt, since both Dim 1 and Dim 2 add up to about 30% only, which suggest that 70% of the variance is not represented in this plot.     
+
+
+
+

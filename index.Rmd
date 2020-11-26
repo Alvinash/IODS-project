@@ -41,5 +41,10 @@ text-align: justify}
 ***
 ```{r child="chapter4.rmd"}
 ```
+
+***
+```{r child="chapter5.rmd"}
+```
+***
 (more chapters to be added similarly as we proceed with the course!)
 
