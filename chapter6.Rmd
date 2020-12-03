@@ -1,0 +1,213 @@
+# Analysis of longitudinal data
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(lme4)
+```
+
+## RAT analysis (Graphical displays and summary measure approach)
+```{r}
+#reading csv
+RATS<-read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt",sep="",header=T)
+RATSL<-read.csv("RATSL.csv",row.names=1)
+str(RATSL)
+#need to re factorise ID and group
+RATSL$ID<-factor(RATSL$ID)
+RATSL$Group<-factor(RATSL$Group)
+str(RATSL)
+```
+
+This dataset describes an in vivo test of 16 rats from 3 different diet groups. Their weight were measured a few times with intervals at day 1, 8, 15
+22, 29, 36, 43, 44, 50, 57 and 64.  
+
+### Drawing the plot
+```{r}
+ggplot(RATSL, aes(x = Time, y = Weight, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(RATSL$Weight), max(RATSL$Weight)))
+```
+
+Each line represents the weight of one mouse throughout the 69 days of duration. We can observe that the weight of all groups increases over time. Group 1 diet have the lowest through the whole period of time, while both group 2 and group 3 have very similar weight. (except for the higest weight in group 2). However, since the mice have very different weights, we would standardise them to get a better comparison. 
+
+### Golden standardisation and tracking phenomenon
+```{r}
+RATSS <- RATSL %>%
+  group_by(Group,ID) %>%
+  mutate(stdweight = ((Weight-mean(Weight))/sd(Weight))) %>%
+  ungroup()
+
+str(RATSS)
+
+ggplot(RATSS, aes(x = Time, y = stdweight, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  scale_y_continuous(limits = c(min(RATSS$stdweight), max(RATSS$stdweight)))
+```
+
+After standardisation, we are able to track the changes of each individual mouse. In general, all mice have an increased in weight irregardless of their diet. There are a few dips in weight as observe but the general trend is the same. 
+### Summary of the three different diet
+```{r}
+#Getting the total number of time points per animal
+n <- RATSS$Time %>% unique() %>% length()
+
+#summary data with mean and standard error
+RATSS <- RATSL %>%
+  group_by(Group,Time) %>%
+  summarise(mean = mean(Weight), se = (sd(Weight))/(sqrt(n)) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(RATSS)
+
+ggplot(RATSS, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line()+
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=3)+
+  scale_shape_manual(values = c(1,2,3))+
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se, linetype="1"), width=0.3)+
+  theme(legend.position = c(0.8,0.4))+
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)")
+```
+
+The summary of the weight shows that there is a general increase in weight for all three groups. However, the SE for group 2 is large, which may suggest that there is no significant increased in weight for all different timepoints of group 2. The same can be said for group 3 to a smaller effect. 
+
+### Summary graphs
+```{r}
+#Filtering out day 1 and assume its the baseline for later analysis
+RATSLWD8<-RATSL%>%
+  filter(Time>1)%>%
+  group_by(Group,ID)%>%
+  summarise(mean=mean(Weight))%>%
+  ungroup()
+  
+glimpse(RATSLWD8)
+
+ggplot(RATSLWD8, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(Weight), Days 1-69")
+```
+
+From the boxplot, we can observe 3 outliers from each group of mice. Therefore, we would have to remove the outliers. 
+
+```{r}
+RATSLWD8N<-RATSLWD8%>%
+  filter(ID!=2 & ID!=12 & ID!=13)
+ggplot(RATSLWD8N, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(Weight), Days 1-69")
+```
+
+After removing the outlier, we see that the variance between each point is much better. Each group has very close mean weight and thus suggest that there isn't much changes between each mouse of the same group. 
+
+### Anova
+```{r}
+glimpse(RATSLWD8N)
+#Cant do t-test since we have 3 groups. 
+
+#adding day 1 as baseline
+RATSLWD8N2<-RATSLWD8 %>%
+  mutate(baseline=RATS$WD1) 
+
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ baseline + Group , data = RATSLWD8N2)
+
+# Compute the analysis of variance table for the fitted model with anova()
+anova(fit)
+
+```
+From the results of ANOVA, we can see that the baseline (in this case weight on day 1) is strongly related to the weight taken after day 1 since the P value is highly singinicant (Very small). However, there is no evidence of diet difference even after conditioning to day 1 as the P value is above 0.05 (Assuming we set at P<0.05.
+
+## BPRS analysis (Linear Mixed Effects Models for Normal Response Variables)
+```{r}
+#reading csv
+BPRS<-read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt",sep='',header=T)
+BPRSL<-read.csv("BPRSL.csv",row.names=1)
+str(BPRSL)
+#need to re factorise ID and group
+BPRSL$treatment<-factor(BPRSL$treatment)
+BPRSL$subject<-factor(BPRSL$subject)
+str(BPRSL)
+```
+This dataset describes a clinical trial of 40 men randonmly assigned to two treatments, as well as the brief psychiatric rating scale (BRPS) measured before treatment and at a weekly intervals for a total of 8 weeks.18 levels of symptoms are measured such as hostility, suspiciousness, hallucinations and grandiosity - each are rated against a scale from 1 (not present) to 7 (extremely severe). The sum of scale (I presumed) is then used to evaluate patients suspected of having schizophrenia
+
+### Plotting data
+```{r}
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+```
+
+BPRS for both groups decreases as the week goes by. Interestingly, the bprs for treatment 2 is generally higher than treatment 1. This could be due to the higher starting value of brps of treatment 2 as compared to treatment 1. 
+
+### Linear model
+```{r}
+BPRS_reg <- lm(bprs ~ week + treatment, data = BPRSL)
+
+summary(BPRS_reg)
+```
+
+Since week has a negative coefficient, it is true that as the week goes by, patient's bprs score decreases and the patient's mental welfare is better for both treatment. While treatment 2 has a positive coefficient, the insignificant p value suggest that there is no difference between both treatments. 
+
+### Random intercept model 
+```{r}
+# Create a random intercept model with random effect by subject
+BPRS_ref1 <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRSL, REML = FALSE)
+
+# Print the summary of the model
+summary(BPRS_ref1)
+```
+
+We can observe that after applying the random model, the std error of week is smaller as compared to the previous linear model. As such, we will be including week as another random variable.
+```{r}
+BPRS_ref2<- lmer(bprs ~ week + treatment + (week | subject), data = BPRSL, REML = FALSE)
+summary(BPRS_ref2)
+
+#Anova
+anova(BPRS_ref1,BPRS_ref2)
+```
+
+From the ANOVA, we observe that the P value of the likelihood ratio is rather significant <0.05. This suggest that the random intercept and slope model provides a better fit for these data.  
+
+```{r}
+BPRS_ref3<- lmer(bprs ~ week*treatment + (week | subject), data = BPRSL, REML = FALSE)
+summary(BPRS_ref3)
+anova(BPRS_ref2,BPRS_ref3)
+```
+Adding week*treatment into the linear model doesnt really do much since there is no difference between BPRS_REF2 and BPRS_REF3. 
+
+```{r}
+Fitted <- fitted(BPRS_ref2)
+BPRSL<-BPRSL%>%
+  mutate(Fitted)
+
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+
+ggplot(BPRSL, aes(x = week, y = Fitted, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+
+
+```
+
+Fitting the fitted model, we can now observe that both treatments do not really have much difference in their effects on bprs, as compared to the observed data. Also, the decreasing trend is now more prominent. 
+
+
